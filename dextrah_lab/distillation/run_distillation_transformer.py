@@ -53,7 +53,13 @@ from rl_games.torch_runner import Runner
 from rl_games.algos_torch import model_builder
 
 from isaaclab.utils.dict import print_dict
-from isaaclab.utils.io import dump_pickle, dump_yaml
+from isaaclab.utils.io import dump_yaml
+import pickle
+
+def dump_pickle(filename: str, data: object):
+    """Dump data to a pickle file."""
+    with open(filename, "wb") as f:
+        pickle.dump(data, f)
 
 import isaaclab_tasks  # noqa: F401
 from isaaclab_tasks.utils import load_cfg_from_registry, parse_env_cfg
