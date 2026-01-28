@@ -1,16 +1,16 @@
 # DextrAH 환경 설정 및 학습 가이드
 
-이 문서는 IsaacSim 5.1.0과 IsaacLab v2.3.1을 사용하여 DextrAH를 실행하는 방법을 설명합니다.
+이 문서는 IsaacSim 5.1.0과 IsaacLab (main branch)을 사용하여 DextrAH를 실행하는 방법을 설명합니다.
 
 ## 환경 구성
 
 | 구성 요소 | 버전 | 경로 |
 |----------|------|------|
 | IsaacSim | 5.1.0 (소스 빌드) | `/home/avery/isaacsim` |
-| IsaacLab | v2.3.1 | `/home/avery/IsaacLab` |
+| IsaacLab | main branch (v2.3.1+) | `/home/avery/Documents/IsaacLab` |
 | FABRICS | 0.1.0 | `/home/avery/Documents/FABRICS` |
 | DextrAH | 0.1.0 | `/home/avery/Documents/DEXTRAH` |
-| Python | 3.11 | IsaacSim 내장 |
+| Python | 3.11.13 | IsaacSim 내장 |
 
 ## 버전 호환성
 
@@ -23,7 +23,7 @@ IsaacLab과 IsaacSim 버전 호환성 표:
 | v2.1.X | 4.5 |
 | v2.0.X | 4.5 |
 
-**참고**: DextrAH는 원래 IsaacLab v2.2.1용으로 작성되었으나, v2.3.1에서 실행하기 위해 일부 코드 수정이 필요했습니다.
+**참고**: DextrAH는 원래 IsaacLab v2.2.1용으로 작성되었으나, 최신 main 브랜치(v2.3.1+)에서 실행하기 위해 일부 코드 수정이 필요했습니다.
 
 ## 설치 과정
 
@@ -36,13 +36,13 @@ cd /home/avery/isaacsim
 
 빌드 결과물: `/home/avery/isaacsim/_build/linux-x86_64/release/`
 
-### 2. IsaacLab v2.3.1 설치
+### 2. IsaacLab 설치 (main branch)
 
 ```bash
-cd /home/avery
-git clone https://github.com/isaac-sim/IsaacLab.git
+cd /home/avery/Documents
+git clone https://github.com/curieuxjy/IsaacLab.git
 cd IsaacLab
-git checkout v2.3.1
+# main 브랜치 사용 (v2.3.1 이후 최신 개발 버전)
 
 # IsaacSim 심볼릭 링크 생성
 ln -s /home/avery/isaacsim/_build/linux-x86_64/release _isaac_sim
@@ -51,6 +51,7 @@ ln -s /home/avery/isaacsim/_build/linux-x86_64/release _isaac_sim
 ./_isaac_sim/python.sh -m pip install -e source/isaaclab
 ./_isaac_sim/python.sh -m pip install -e source/isaaclab_tasks
 ./_isaac_sim/python.sh -m pip install -e source/isaaclab_assets
+./_isaac_sim/python.sh -m pip install -e source/isaaclab_rl
 ./_isaac_sim/python.sh -m pip install rl_games
 ```
 
@@ -59,14 +60,14 @@ ln -s /home/avery/isaacsim/_build/linux-x86_64/release _isaac_sim
 ```bash
 cd /home/avery/Documents
 git clone https://github.com/NVlabs/FABRICS.git
-cd /home/avery/IsaacLab
+cd /home/avery/Documents/IsaacLab
 ./_isaac_sim/python.sh -m pip install -e /home/avery/Documents/FABRICS
 ```
 
 ### 4. DextrAH 설치
 
 ```bash
-cd /home/avery/IsaacLab
+cd /home/avery/Documents/IsaacLab
 ./_isaac_sim/python.sh -m pip install -e /home/avery/Documents/DEXTRAH
 ```
 
@@ -81,9 +82,9 @@ rm textures.zip
 
 ## 코드 수정 사항
 
-### IsaacLab v2.3.1 호환성 수정
+### IsaacLab 호환성 수정
 
-`dump_pickle` 함수가 IsaacLab v2.3.1에서 제거되어 다음 파일들에 직접 추가:
+`dump_pickle` 함수가 IsaacLab v2.3.x에서 제거되어 다음 파일들에 직접 추가:
 
 - `dextrah_lab/rl_games/train.py`
 - `dextrah_lab/distillation/run_distillation.py`
@@ -105,7 +106,7 @@ def dump_pickle(filename: str, data: object):
 urdfpy 라이브러리에서 `np.float` 사용으로 인한 에러 수정:
 
 ```bash
-sed -i 's/np\.float\b/float/g' /home/avery/IsaacLab/_isaac_sim/kit/python/lib/python3.11/site-packages/urdfpy/urdf.py
+sed -i 's/np\.float\b/float/g' /home/avery/Documents/IsaacLab/_isaac_sim/kit/python/lib/python3.11/site-packages/urdfpy/urdf.py
 ```
 
 ### networkx 버전 업그레이드
@@ -121,7 +122,7 @@ Python 3.11 호환을 위해 networkx 업그레이드:
 ### 기본 실행 명령어
 
 ```bash
-cd /home/avery/IsaacLab
+cd /home/avery/Documents/IsaacLab
 
 ./_isaac_sim/python.sh /home/avery/Documents/DEXTRAH/dextrah_lab/rl_games/train.py \
     --task=Dextrah-Kuka-Allegro \
@@ -176,9 +177,20 @@ Average FPS: ~6,750
 ### 체크포인트 저장 위치
 
 ```
-/home/avery/IsaacLab/logs/rl_games/dextrah_lstm/<timestamp>/nn/
+/home/avery/Documents/IsaacLab/logs/rl_games/dextrah_lstm/<timestamp>/nn/
 ├── dextrah_lstm.pth                    # Best checkpoint
 └── last_dextrah_lstm_ep_XXX_rew_XXX.pth # Last checkpoint
+```
+
+## 학습된 모델 시각화 (GUI)
+
+```bash
+cd /home/avery/Documents/IsaacLab
+
+./_isaac_sim/python.sh /home/avery/Documents/DEXTRAH/dextrah_lab/rl_games/play.py \
+    --task=Dextrah-Kuka-Allegro \
+    --num_envs 4 \
+    --checkpoint /home/avery/Documents/IsaacLab/logs/rl_games/dextrah_lstm/<timestamp>/nn/dextrah_lstm.pth
 ```
 
 ## 학습 모니터링
@@ -190,7 +202,7 @@ Average FPS: ~6,750
 tail -f /tmp/claude/-home-avery-Documents-DEXTRAH/tasks/<task_id>.output
 
 # 또는 로그 디렉토리에서
-tail -f /home/avery/IsaacLab/logs/rl_games/dextrah_lstm/<timestamp>/log.txt
+tail -f /home/avery/Documents/IsaacLab/logs/rl_games/dextrah_lstm/<timestamp>/log.txt
 ```
 
 ### 학습 지표
@@ -245,10 +257,10 @@ fps step: 15716 fps step and policy inference: 15042 fps total: 6777 epoch: 98/1
 /home/avery/
 ├── isaacsim/                          # IsaacSim 5.1.0 소스
 │   └── _build/linux-x86_64/release/   # 빌드 결과물
-├── IsaacLab/                          # IsaacLab v2.3.1
-│   ├── _isaac_sim -> isaacsim/_build/linux-x86_64/release
-│   └── logs/rl_games/                 # 학습 로그 및 체크포인트
 └── Documents/
+    ├── IsaacLab/                      # IsaacLab main branch (curieuxjy fork)
+    │   ├── _isaac_sim -> /home/avery/isaacsim/_build/linux-x86_64/release
+    │   └── logs/rl_games/             # 학습 로그 및 체크포인트
     ├── DEXTRAH/                       # DextrAH 프로젝트
     │   ├── dextrah_lab/
     │   │   ├── assets/
