@@ -60,6 +60,10 @@ def main():
     env_cfg = parse_env_cfg(
         args_cli.task,  device=args_cli.device, num_envs=args_cli.num_envs, use_fabric=not args_cli.disable_fabric
     )
+    # Set required DextrAH configuration
+    env_cfg.objects_dir = "visdex_objects"
+    env_cfg.max_pose_angle = 45.0
+
     agent_cfg = load_cfg_from_registry(args_cli.task, "rl_games_cfg_entry_point")
 
     # wrap around environment for rl-games
@@ -69,6 +73,8 @@ def main():
 
     # create isaac environment
     env = gym.make(args_cli.task, cfg=env_cfg)
+    # keep reference to unwrapped environment for accessing internal state
+    unwrapped_env = env.unwrapped
     # wrap around environment for rl-games
     env = RlGamesVecEnvWrapper(env, rl_device, clip_obs, clip_actions)
 
@@ -138,8 +144,13 @@ def main():
             actions = agent.get_action(obs, is_deterministic=False)
             # env stepping
             obs, _, dones, _ = env.step(actions)
-            print("count", count, "sr: ", env.env.in_success_region.float().mean())
-            sr[count] = env.env.in_success_region.float().mean()
+            # Access success region from unwrapped environment
+            if hasattr(unwrapped_env, 'in_success_region'):
+                success_rate = unwrapped_env.in_success_region.float().mean()
+                print("count", count, "sr: ", success_rate)
+                sr[count] = success_rate
+            else:
+                print("count", count)
             count += 1
 
             # perform operations for terminated episodes
@@ -155,7 +166,8 @@ def main():
     # close the simulator
     env.close()
 
-    print("final sr: ", sr[num_evals-100:].mean())
+    if hasattr(unwrapped_env, 'in_success_region'):
+        print("final sr: ", sr[num_evals-100:].mean())
 
 
 if __name__ == "__main__":
