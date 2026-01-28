@@ -182,7 +182,20 @@ Average FPS: ~6,750
 └── last_dextrah_lstm_ep_XXX_rew_XXX.pth # Last checkpoint
 ```
 
-## 학습된 모델 시각화 (GUI)
+## 시각화 옵션
+
+### 시각화 모드 비교
+
+| 모드 | FPS | 환경 수 | 장점 | 단점 |
+|------|-----|--------|------|------|
+| Headless | ~7,000 | 1024 | 최고 속도 | 시각화 없음 |
+| GUI (performance) | ~1,000 | 64 | 실시간 확인 | 메모리 사용↑, 환경 수 제한 |
+| Livestream | ~1,000 | 64 | 원격 시청 가능 | Streaming Client 필요 |
+| Video Recording | ~2,800* | 64 | 나중에 확인 가능 | 녹화 중 속도↓ |
+
+*녹화 구간 제외 시
+
+### 1. 학습된 모델 시각화 (play.py)
 
 ```bash
 cd /home/avery/Documents/IsaacLab
@@ -192,6 +205,126 @@ cd /home/avery/Documents/IsaacLab
     --num_envs 4 \
     --checkpoint /home/avery/Documents/IsaacLab/logs/rl_games/dextrah_lstm/<timestamp>/nn/dextrah_lstm.pth
 ```
+
+### 2. 간단한 GUI 학습 확인 (권장)
+
+학습이 제대로 진행되는지 빠르게 확인하고 싶을 때 사용합니다.
+
+```bash
+cd ~/Documents/IsaacLab && ./_isaac_sim/python.sh /home/avery/Documents/DEXTRAH/dextrah_lab/rl_games/train.py \
+    --task=Dextrah-Kuka-Allegro \
+    --num_envs=16 \
+    --max_iterations=50 \
+    --rendering_mode=balanced \
+    env.objects_dir=visdex_objects \
+    env.max_pose_angle=45.0 \
+    agent.wandb_activate=false \
+    agent.params.config.minibatch_size=128 \
+    agent.params.config.central_value_config.minibatch_size=128
+```
+
+**렌더링 품질별 성능 (16 envs 기준)**:
+
+| 모드 | FPS | 화질 | 용도 |
+|------|-----|------|------|
+| `performance` | ~400+ | 낮음 | 빠른 확인 |
+| `balanced` | ~250-350 | 중간 | 일반 확인 (권장) |
+| `quality` | ~150-200 | 높음 | 상세 확인 |
+
+### 3. GUI 모드 학습 (다수 환경)
+
+더 많은 환경으로 실시간 시각화하며 학습할 때 사용합니다.
+
+```bash
+cd /home/avery/Documents/IsaacLab
+
+./_isaac_sim/python.sh /home/avery/Documents/DEXTRAH/dextrah_lab/rl_games/train.py \
+    --task=Dextrah-Kuka-Allegro \
+    --num_envs=64 \
+    --max_iterations=100 \
+    --rendering_mode=performance \
+    env.objects_dir=visdex_objects \
+    env.max_pose_angle=45.0 \
+    agent.wandb_activate=false \
+    agent.params.config.minibatch_size=512 \
+    agent.params.config.central_value_config.minibatch_size=512
+```
+
+**주의**: GUI 모드는 메모리 사용량이 높아 환경 수를 64개 이하로 제한해야 합니다. 256개 이상은 OOM 발생 가능.
+
+### 4. Livestream 모드 (원격 시청)
+
+```bash
+cd /home/avery/Documents/IsaacLab
+
+./_isaac_sim/python.sh /home/avery/Documents/DEXTRAH/dextrah_lab/rl_games/train.py \
+    --task=Dextrah-Kuka-Allegro \
+    --num_envs=64 \
+    --max_iterations=100 \
+    --headless \
+    --livestream=2 \
+    env.objects_dir=visdex_objects \
+    env.max_pose_angle=45.0 \
+    agent.wandb_activate=false \
+    agent.params.config.minibatch_size=512 \
+    agent.params.config.central_value_config.minibatch_size=512
+```
+
+**Livestream 옵션**:
+- `--livestream=1`: Native streaming (Omniverse Kit Remote)
+- `--livestream=2`: WebRTC streaming
+
+**연결 방법**: [Omniverse Streaming Client](https://www.nvidia.com/omniverse) 설치 후 `localhost:49100`으로 연결
+
+### 5. 영상 녹화 모드
+
+```bash
+cd /home/avery/Documents/IsaacLab
+
+./_isaac_sim/python.sh /home/avery/Documents/DEXTRAH/dextrah_lab/rl_games/train.py \
+    --task=Dextrah-Kuka-Allegro \
+    --num_envs=64 \
+    --max_iterations=100 \
+    --headless \
+    --video \
+    --video_length=100 \
+    --video_interval=500 \
+    env.objects_dir=visdex_objects \
+    env.max_pose_angle=45.0 \
+    agent.wandb_activate=false \
+    agent.params.config.minibatch_size=512 \
+    agent.params.config.central_value_config.minibatch_size=512
+```
+
+**영상 녹화 옵션**:
+- `--video`: 영상 녹화 활성화
+- `--video_length=100`: 녹화 길이 (스텝 수)
+- `--video_interval=500`: 녹화 간격 (스텝 수)
+
+**녹화 파일 위치**:
+```
+/home/avery/Documents/IsaacLab/logs/rl_games/dextrah_lstm/<timestamp>/videos/train/rl-video-step-*.mp4
+```
+
+**영상 사양**:
+- 해상도: 1280 x 720
+- 코덱: H.264
+- 프레임 레이트: 60 fps
+
+**영상 재생**:
+```bash
+xdg-open /home/avery/Documents/IsaacLab/logs/rl_games/dextrah_lstm/<timestamp>/videos/train/rl-video-step-0.mp4
+```
+
+### 렌더링 모드 옵션
+
+`--rendering_mode` 파라미터로 렌더링 품질 조절 가능:
+
+| 모드 | 설명 |
+|------|------|
+| `performance` | 낮은 품질, 높은 성능 (권장) |
+| `balanced` | 균형 |
+| `quality` | 높은 품질, 낮은 성능 |
 
 ## 학습 모니터링
 
